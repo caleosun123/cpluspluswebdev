@@ -3,36 +3,37 @@ FROM alpine:latest
 
 # Install dependencies
 RUN apk update && apk add --no-cache \
-    build-base \
-    cmake \
-    git \
-    boost-dev \
-    openssl-dev \
-    ninja \
-    pkgconfig \
-    wget
+    apache2 \
+    apache2-utils \
+    apache2-dev \
+    g++ \
+    make \
+    cmake
 
-# Clone cpprestsdk repository and build
-RUN git clone https://github.com/microsoft/cpprestsdk.git /cpprestsdk \
-    && cd /cpprestsdk \
-    && git submodule update --init \
-    && mkdir build \
-    && cd build \
-    && cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug \
-    && ninja \
-    && ninja install
+# Enable CGI module and configure Apache
+RUN mkdir -p /run/apache2 && \
+    sed -i 's/#LoadModule cgid_module/LoadModule cgid_module/' /etc/apache2/httpd.conf && \
+    echo "ScriptAlias /cgi-bin/ \"/var/www/cgi-bin/\"" >> /etc/apache2/httpd.conf && \
+    echo "<Directory \"/var/www/cgi-bin\">" >> /etc/apache2/httpd.conf && \
+    echo "    AllowOverride None" >> /etc/apache2/httpd.conf && \
+    echo "    Options +ExecCGI" >> /etc/apache2/httpd.conf && \
+    echo "    Require all granted" >> /etc/apache2/httpd.conf && \
+    echo "</Directory>" >> /etc/apache2/httpd.conf
 
-# Copy your C++ application code to the container
-COPY . /app
+# Copy your C++ CGI script to the container
+COPY main.cpp /var/www/cgi-bin/main.cpp
 
-# Change working directory to the directory containing main.cpp
-WORKDIR /app
+# Change working directory to the CGI-bin directory
+WORKDIR /var/www/cgi-bin
 
-# Build your C++ application
-RUN g++ -o cpluspluswebdev main.cpp -lcpprest -lboost_system -lssl -lcrypto -lboost_random
+# Compile your C++ CGI script
+RUN g++ -o main.cgi main.cpp
 
-# Expose the port your application runs on
-EXPOSE 8080
+# Make sure the CGI script is executable
+RUN chmod +x main.cgi
 
-# Command to run your application
-CMD ["./cpluspluswebdev"]
+# Expose the port Apache runs on
+EXPOSE 80
+
+# Start Apache in the foreground
+CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
