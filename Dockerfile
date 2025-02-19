@@ -23,7 +23,8 @@ RUN git clone https://github.com/microsoft/cpprestsdk.git /cpprestsdk \
     && mkdir build.debug \
     && cd build.debug \
     && cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug \
-    && cmake --build .
+    && cmake --build . \
+    && cmake --install .
 
 # Copy your C++ application code to the container
 COPY . /app
@@ -32,7 +33,7 @@ COPY . /app
 WORKDIR /app
 
 # Build your C++ application
-RUN cmake . \
+RUN cmake -DCMAKE_PREFIX_PATH=/usr/local .. \
     && make
 
 # Expose the port your application runs on
