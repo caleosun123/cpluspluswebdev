@@ -29,11 +29,11 @@ RUN git clone https://github.com/microsoft/cpprestsdk.git /cpprestsdk \
 # Copy your C++ application code to the container
 COPY . /app
 
-# Change working directory
-WORKDIR /app
+# Change working directory to the directory containing CMakeLists.txt
+WORKDIR /app/cppwebdev
 
 # Build your C++ application
-RUN cmake -DCMAKE_PREFIX_PATH=/usr/local .. \
+RUN cmake -DCMAKE_PREFIX_PATH=/usr/local . \
     && make
 
 # Expose the port your application runs on
