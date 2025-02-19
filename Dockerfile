@@ -1,30 +1,26 @@
-# Use an official Ubuntu as a parent image
-FROM ubuntu:20.04
+# Use an official Alpine as a parent image
+FROM alpine:latest
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Update package repository and install dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
+# Install dependencies
+RUN apk update && apk add --no-cache \
+    build-base \
     cmake \
     git \
-    libboost-all-dev \
-    libssl-dev \
-    ninja-build \
-    pkg-config \
-    wget \
-    && rm -rf /var/lib/apt/lists/*
+    boost-dev \
+    openssl-dev \
+    ninja \
+    pkgconfig \
+    wget
 
 # Clone cpprestsdk repository and build
 RUN git clone https://github.com/microsoft/cpprestsdk.git /cpprestsdk \
     && cd /cpprestsdk \
     && git submodule update --init \
-    && mkdir build.debug \
-    && cd build.debug \
+    && mkdir build \
+    && cd build \
     && cmake -G Ninja .. -DCMAKE_BUILD_TYPE=Debug \
-    && cmake --build . \
-    && cmake --install .
+    && ninja \
+    && ninja install
 
 # Copy your C++ application code to the container
 COPY . /app
